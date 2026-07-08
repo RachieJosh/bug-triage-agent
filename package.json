@@ -1,0 +1,26 @@
+{
+  "name": "bug-triage-agent",
+  "version": "1.0.0",
+  "description": "AI-powered Bug Triage Agent using Claude API",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/RachieJosh/bug-triage-agent.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/RachieJosh/bug-triage-agent/issues"
+  },
+  "homepage": "https://github.com/RachieJosh/bug-triage-agent#readme",
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.110.0",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1"
+  }
+}
