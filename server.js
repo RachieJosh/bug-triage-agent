@@ -20,37 +20,38 @@ const tools = [
         title: { type: 'string' },
         severity: { type: 'string', enum: ['Critical', 'High', 'Medium', 'Low'] },
         description: { type: 'string' },
+        priority: { type: 'string', enum: ['Highest', 'High', 'Medium', 'Low', 'Lowest'] },
+        labels: {
+          type: 'array',
+          items: { type: 'string' },
+          description: 'Short lowercase tags describing the bug area, e.g. payment, autoplay, android',
+        },
       },
-      required: ['title', 'severity', 'description'],
+      required: ['title', 'severity', 'description', 'priority', 'labels'],
     },
   },
 ];
 
-async function createJiraTicket(input) {
-  const url = `${process.env.JIRA_BASE_URL}/rest/api/3/issue`;
-
-  const authString = Buffer.from(
-    `${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`
-  ).toString('base64');
-
-  const body = {
-    fields: {
-      project: { key: process.env.JIRA_PROJECT_KEY },
-      summary: `[${input.severity}] ${input.title}`,
-      description: {
-        type: 'doc',
-        version: 1,
-        content: input.description
-          .split('\n\n')
-          .filter(p => p.trim().length > 0)
-          .map(paragraph => ({
-            type: 'paragraph',
-            content: [{ type: 'text', text: paragraph.trim() }],
-          })),
-      },
-      issuetype: { name: 'Bug' },
+const body = {
+  fields: {
+    project: { key: process.env.JIRA_PROJECT_KEY },
+    summary: `[${input.severity}] ${input.title}`,
+    description: {
+      type: 'doc',
+      version: 1,
+      content: input.description
+        .split('\n\n')
+        .filter(p => p.trim().length > 0)
+        .map(paragraph => ({
+          type: 'paragraph',
+          content: [{ type: 'text', text: paragraph.trim() }],
+        })),
     },
-  };
+    issuetype: { name: 'Bug' },
+    priority: { name: input.priority },
+    labels: input.labels,
+  },
+};
 
   const response = await fetch(url, {
     method: 'POST',
