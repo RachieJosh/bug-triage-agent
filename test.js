@@ -43,15 +43,16 @@ async function createJiraTicket(input) {
       project: { key: process.env.JIRA_PROJECT_KEY },
       summary: `[${input.severity}] ${input.title}`,
       description: {
-        type: 'doc',
-        version: 1,
-        content: [
-          {
-            type: 'paragraph',
-            content: [{ type: 'text', text: input.description }],
-          },
-        ],
-      },
+  type: 'doc',
+  version: 1,
+  content: input.description
+    .split('\n\n')
+    .filter(p => p.trim().length > 0)
+    .map(paragraph => ({
+      type: 'paragraph',
+      content: [{ type: 'text', text: paragraph.trim() }],
+    })),
+},
       issuetype: { name: 'Bug' }, // change to 'Task' if your project has no 'Bug' type
     },
   };
@@ -88,11 +89,20 @@ async function run() {
   const response = await anthropic.messages.create({
     model: 'claude-sonnet-4-6',
     max_tokens: 2000,
-    system: `You are a senior QA engineer with 8 years of experience in software testing,
-bug triage, and root cause analysis. You have deep expertise in identifying severity levels,
-tracing bugs back to likely technical causes, and recommending precise fix steps for
-development teams. When a bug is reported, you take autonomous action using the tools
-available to you rather than just describing what should happen.`,
+   system: `You are a senior QA engineer with 8 years of experience in software testing,
+   bug triage, and root cause analysis.
+
+   When given a bug report, respond briefly and in plain spoken English, like you're
+   explaining it to a teammate out loud, not writing a report. Do not use markdown
+   formatting like headers, asterisks, or bullet symbols. Do not repeat the severity
+   level more than once.
+
+   For the ticket description, write exactly 3 short paragraphs separated by a blank
+   line: first what's happening, second the likely root cause, third the recommended
+   fix. Each paragraph should be 2-3 sentences, easy to read at a glance.
+
+   Keep your spoken explanation (outside the ticket) to 3-4 short sentences, then take
+   action using the tools available to you.`,
     tools,
     messages: [
       { role: 'user', content: `Analyze this bug and take whatever action is appropriate:\n\n${bugReport}` }
