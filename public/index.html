@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bug Triage Agent</title>
+  <style>
+    body {
+      font-family: -apple-system, sans-serif;
+      max-width: 640px;
+      margin: 60px auto;
+      padding: 0 20px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    h1 { font-size: 22px; }
+    textarea {
+      width: 100%;
+      height: 140px;
+      padding: 12px;
+      border-radius: 8px;
+      border: 1px solid #334155;
+      background: #1e293b;
+      color: #e2e8f0;
+      font-size: 14px;
+      resize: vertical;
+    }
+    button {
+      margin-top: 12px;
+      padding: 10px 20px;
+      background: #2563eb;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+    #result {
+      margin-top: 24px;
+      padding: 16px;
+      background: #1e293b;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      line-height: 1.6;
+      display: none;
+    }
+    .ticket-link {
+      display: inline-block;
+      margin-top: 12px;
+      color: #60a5fa;
+    }
+  </style>
+</head>
+<body>
+  <h1>🐞 Bug Triage Agent</h1>
+  <p>Paste a bug report below. The agent will analyze it and file a Jira ticket automatically.</p>
+  <textarea id="bugReport" placeholder="Describe the bug..."></textarea>
+  <br>
+  <button id="submitBtn">Analyze & Triage</button>
+  <div id="result"></div>
+
+  <script>
+    const btn = document.getElementById('submitBtn');
+    const textarea = document.getElementById('bugReport');
+    const result = document.getElementById('result');
+
+    btn.addEventListener('click', async () => {
+      const bugReport = textarea.value.trim();
+      if (!bugReport) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Analyzing...';
+      result.style.display = 'block';
+      result.textContent = 'Agent is reasoning through this...';
+
+      try {
+        const res = await fetch('/triage', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ bugReport }),
+        });
+        const data = await res.json();
+
+        let output = data.explanation + '\n';
+        if (data.ticket?.success) {
+          output += `\n✅ Ticket created: ${data.ticket.ticket_id}`;
+        }
+        result.textContent = output;
+
+        if (data.ticket?.ticket_url) {
+          const link = document.createElement('a');
+          link.href = data.ticket.ticket_url;
+          link.target = '_blank';
+          link.className = 'ticket-link';
+          link.textContent = `View ${data.ticket.ticket_id} in Jira →`;
+          result.appendChild(document.createElement('br'));
+          result.appendChild(link);
+        }
+      } catch (err) {
+        result.textContent = 'Something went wrong: ' + err.message;
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Analyze & Triage';
+    });
+  </script>
+</body>
+</html>
