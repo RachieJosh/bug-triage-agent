@@ -32,26 +32,33 @@ const tools = [
   },
 ];
 
-const body = {
-  fields: {
-    project: { key: process.env.JIRA_PROJECT_KEY },
-    summary: `[${input.severity}] ${input.title}`,
-    description: {
-      type: 'doc',
-      version: 1,
-      content: input.description
-        .split('\n\n')
-        .filter(p => p.trim().length > 0)
-        .map(paragraph => ({
-          type: 'paragraph',
-          content: [{ type: 'text', text: paragraph.trim() }],
-        })),
+async function createJiraTicket(input) {
+  const url = `${process.env.JIRA_BASE_URL}/rest/api/3/issue`;
+
+  const authString = Buffer.from(
+    `${process.env.JIRA_EMAIL}:${process.env.JIRA_API_TOKEN}`
+  ).toString('base64');
+
+  const body = {
+    fields: {
+      project: { key: process.env.JIRA_PROJECT_KEY },
+      summary: `[${input.severity}] ${input.title}`,
+      description: {
+        type: 'doc',
+        version: 1,
+        content: input.description
+          .split('\n\n')
+          .filter(p => p.trim().length > 0)
+          .map(paragraph => ({
+            type: 'paragraph',
+            content: [{ type: 'text', text: paragraph.trim() }],
+          })),
+      },
+      issuetype: { name: 'Bug' },
+      priority: { name: input.priority },
+      labels: input.labels,
     },
-    issuetype: { name: 'Bug' },
-    priority: { name: input.priority },
-    labels: input.labels,
-  },
-};
+  };
 
   const response = await fetch(url, {
     method: 'POST',
@@ -83,7 +90,6 @@ async function executeTool(name, input) {
   }
 }
 
-// POST /triage — this is the endpoint the web page will call
 app.post('/triage', async (req, res) => {
   const { bugReport } = req.body;
 
