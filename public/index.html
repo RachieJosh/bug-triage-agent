@@ -1,68 +1,205 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Bug Triage Agent</title>
-  <style>
-    body {
-      font-family: -apple-system, sans-serif;
-      max-width: 640px;
-      margin: 60px auto;
-      padding: 0 20px;
-      background: #0f172a;
-      color: #e2e8f0;
-    }
-    h1 { font-size: 22px; }
-    textarea {
-      width: 100%;
-      height: 140px;
-      padding: 12px;
-      border-radius: 8px;
-      border: 1px solid #334155;
-      background: #1e293b;
-      color: #e2e8f0;
-      font-size: 14px;
-      resize: vertical;
-    }
-    button {
-      margin-top: 12px;
-      padding: 10px 20px;
-      background: #2563eb;
-      color: white;
-      border: none;
-      border-radius: 6px;
-      cursor: pointer;
-      font-size: 14px;
-    }
-    button:disabled { opacity: 0.5; cursor: not-allowed; }
-    #result {
-      margin-top: 24px;
-      padding: 16px;
-      background: #1e293b;
-      border-radius: 8px;
-      white-space: pre-wrap;
-      line-height: 1.6;
-      display: none;
-    }
-    .ticket-link {
-      display: inline-block;
-      margin-top: 12px;
-      color: #60a5fa;
-    }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Bug Triage Agent</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: Verdana, Geneva, sans-serif;
+    background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 100%);
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 20px;
+    color: #e2e8f0;
+  }
+
+  .card {
+    background: #1e293b;
+    border: 1px solid #334155;
+    border-radius: 16px;
+    padding: 40px;
+    max-width: 620px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+  }
+
+  .header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 8px;
+  }
+
+  .header .icon {
+    font-size: 28px;
+  }
+
+  h1 {
+    font-size: 22px;
+    font-weight: 700;
+    background: linear-gradient(90deg, #818cf8, #38bdf8);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
+  .subtitle {
+    color: #94a3b8;
+    font-size: 14px;
+    margin-bottom: 28px;
+  }
+
+  textarea {
+    width: 100%;
+    height: 130px;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1.5px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-size: 14px;
+    resize: vertical;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+
+  textarea:focus {
+    border-color: #6366f1;
+  }
+
+  button {
+    margin-top: 14px;
+    padding: 12px 24px;
+    background: linear-gradient(90deg, #6366f1, #38bdf8);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    width: 100%;
+    transition: opacity 0.2s;
+  }
+
+  button:hover { opacity: 0.9; }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .result {
+    margin-top: 24px;
+    display: none;
+  }
+
+  .status-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 13px;
+    color: #94a3b8;
+    margin-bottom: 14px;
+  }
+
+  .spinner {
+    width: 14px;
+    height: 14px;
+    border: 2px solid #334155;
+    border-top-color: #38bdf8;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  .explanation {
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 10px;
+    padding: 16px;
+    font-size: 14px;
+    line-height: 1.6;
+    color: #cbd5e1;
+    white-space: pre-wrap;
+  }
+
+  .ticket-box {
+    margin-top: 14px;
+    padding: 14px 16px;
+    background: rgba(34, 197, 94, 0.08);
+    border: 1px solid rgba(34, 197, 94, 0.3);
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .ticket-box .left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+  }
+
+  .ticket-box a {
+    color: #38bdf8;
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 13px;
+  }
+
+  .ticket-box a:hover { text-decoration: underline; }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 700;
+    background: #22c55e;
+    color: #052e16;
+  }
+</style>
 </head>
 <body>
-  <h1>🐞 Bug Triage Agent</h1>
-  <p>Paste a bug report below. The agent will analyze it and file a Jira ticket automatically.</p>
-  <textarea id="bugReport" placeholder="Describe the bug..."></textarea>
-  <br>
-  <button id="submitBtn">Analyze & Triage</button>
-  <div id="result"></div>
+  <div class="card">
+    <div class="header">
+      <span class="icon">🐞</span>
+      <h1>Bug Triage Agent</h1>
+    </div>
+    <p class="subtitle">Paste a bug report. The agent analyzes it and files a Jira ticket on its own.</p>
+
+    <textarea id="bugReport" placeholder="Describe the bug..."></textarea>
+    <button id="submitBtn">Analyze &amp; Triage</button>
+
+    <div class="result" id="result">
+      <div class="status-line" id="statusLine">
+        <div class="spinner"></div>
+        <span id="statusText">Agent is reasoning through this...</span>
+      </div>
+      <div class="explanation" id="explanation"></div>
+      <div class="ticket-box" id="ticketBox" style="display:none;">
+        <div class="left">
+          <span class="badge">✓ Filed</span>
+          <span id="ticketId"></span>
+        </div>
+        <a id="ticketLink" href="#" target="_blank">View in Jira →</a>
+      </div>
+    </div>
+  </div>
 
   <script>
     const btn = document.getElementById('submitBtn');
     const textarea = document.getElementById('bugReport');
     const result = document.getElementById('result');
+    const statusLine = document.getElementById('statusLine');
+    const statusText = document.getElementById('statusText');
+    const explanation = document.getElementById('explanation');
+    const ticketBox = document.getElementById('ticketBox');
+    const ticketId = document.getElementById('ticketId');
+    const ticketLink = document.getElementById('ticketLink');
 
     btn.addEventListener('click', async () => {
       const bugReport = textarea.value.trim();
@@ -71,7 +208,9 @@
       btn.disabled = true;
       btn.textContent = 'Analyzing...';
       result.style.display = 'block';
-      result.textContent = 'Agent is reasoning through this...';
+      statusLine.style.display = 'flex';
+      explanation.textContent = '';
+      ticketBox.style.display = 'none';
 
       try {
         const res = await fetch('/triage', {
@@ -81,23 +220,17 @@
         });
         const data = await res.json();
 
-        let output = data.explanation + '\n';
-        if (data.ticket?.success) {
-          output += `\n✅ Ticket created: ${data.ticket.ticket_id}`;
-        }
-        result.textContent = output;
+        statusLine.style.display = 'none';
+        explanation.textContent = data.explanation || '';
 
-        if (data.ticket?.ticket_url) {
-          const link = document.createElement('a');
-          link.href = data.ticket.ticket_url;
-          link.target = '_blank';
-          link.className = 'ticket-link';
-          link.textContent = `View ${data.ticket.ticket_id} in Jira →`;
-          result.appendChild(document.createElement('br'));
-          result.appendChild(link);
+        if (data.ticket?.success) {
+          ticketBox.style.display = 'flex';
+          ticketId.textContent = data.ticket.ticket_id;
+          ticketLink.href = data.ticket.ticket_url;
         }
       } catch (err) {
-        result.textContent = 'Something went wrong: ' + err.message;
+        statusLine.style.display = 'none';
+        explanation.textContent = 'Something went wrong: ' + err.message;
       }
 
       btn.disabled = false;
