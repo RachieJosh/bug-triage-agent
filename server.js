@@ -32,7 +32,7 @@ const tools = [
   },
 ];
 
-async function createJiraTicket(input) {
+async function createJiraTicket(input, projectKey) {
   const url = `${process.env.JIRA_BASE_URL}/rest/api/3/issue`;
 
   const authString = Buffer.from(
@@ -41,7 +41,7 @@ async function createJiraTicket(input) {
 
   const body = {
     fields: {
-      project: { key: process.env.JIRA_PROJECT_KEY },
+      project: { key: projectKey || process.env.JIRA_PROJECT_KEY },
       summary: `[${input.severity}] ${input.title}`,
       description: {
         type: 'doc',
@@ -84,14 +84,14 @@ async function createJiraTicket(input) {
   };
 }
 
-async function executeTool(name, input) {
+async function executeTool(name, input, projectKey) {
   if (name === 'create_jira_ticket') {
-    return await createJiraTicket(input);
+    return await createJiraTicket(input, projectKey);
   }
 }
 
 app.post('/triage', async (req, res) => {
-  const { bugReport } = req.body;
+  const { bugReport, projectKey } = req.body;
 
   if (!bugReport || bugReport.trim().length === 0) {
     return res.status(400).json({ error: 'Bug report is required' });
@@ -129,7 +129,7 @@ action using the tools available to you.`,
         explanation = block.text;
       }
       if (block.type === 'tool_use') {
-        ticketResult = await executeTool(block.name, block.input);
+        ticketResult = await executeTool(block.name, block.input, projectKey);
       }
     }
 

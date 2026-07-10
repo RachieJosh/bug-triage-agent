@@ -16,7 +16,17 @@
     justify-content: center;
     padding: 40px 20px;
     color: #e2e8f0;
+    transition: background 0.3s, color 0.3s;
   }
+
+  body.light {
+    background: linear-gradient(135deg, #f1f5f9 0%, #e0e7ff 100%);
+    color: #1e293b;
+  }
+  body.light .card { background: #ffffff; border-color: #e2e8f0; }
+  body.light textarea, body.light select { background: #f8fafc; color: #1e293b; border-color: #cbd5e1; }
+  body.light .explanation { background: #f8fafc; color: #334155; border-color: #e2e8f0; }
+  body.light .subtitle { color: #64748b; }
 
   .card {
     background: #1e293b;
@@ -26,18 +36,24 @@
     max-width: 620px;
     width: 100%;
     box-shadow: 0 20px 60px rgba(0,0,0,0.4);
+    transition: background 0.3s, border-color 0.3s;
   }
 
   .header {
     display: flex;
     align-items: center;
+    justify-content: space-between;
     gap: 12px;
     margin-bottom: 8px;
   }
 
-  .header .icon {
-    font-size: 28px;
+  .header .title-group {
+    display: flex;
+    align-items: center;
+    gap: 12px;
   }
+
+  .header .icon { font-size: 28px; }
 
   h1 {
     font-size: 22px;
@@ -48,10 +64,34 @@
     color: transparent;
   }
 
+  #themeToggle {
+    background: none;
+    border: 1px solid #334155;
+    border-radius: 6px;
+    padding: 4px 10px;
+    font-size: 12px;
+    color: inherit;
+    width: auto;
+    cursor: pointer;
+    font-family: Verdana, Geneva, sans-serif;
+  }
+
   .subtitle {
     color: #94a3b8;
     font-size: 14px;
-    margin-bottom: 28px;
+    margin-bottom: 20px;
+  }
+
+  select#projectSelect {
+    width: 100%;
+    padding: 10px;
+    margin-bottom: 10px;
+    border-radius: 8px;
+    border: 1.5px solid #334155;
+    background: #0f172a;
+    color: #e2e8f0;
+    font-family: Verdana, Geneva, sans-serif;
+    font-size: 13px;
   }
 
   textarea {
@@ -63,16 +103,15 @@
     background: #0f172a;
     color: #e2e8f0;
     font-size: 14px;
+    font-family: Verdana, Geneva, sans-serif;
     resize: vertical;
     outline: none;
     transition: border-color 0.2s;
   }
 
-  textarea:focus {
-    border-color: #6366f1;
-  }
+  textarea:focus { border-color: #6366f1; }
 
-  button {
+  button#submitBtn {
     margin-top: 14px;
     padding: 12px 24px;
     background: linear-gradient(90deg, #6366f1, #38bdf8);
@@ -83,16 +122,14 @@
     font-size: 14px;
     font-weight: 600;
     width: 100%;
+    font-family: Verdana, Geneva, sans-serif;
     transition: opacity 0.2s;
   }
 
-  button:hover { opacity: 0.9; }
-  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button#submitBtn:hover { opacity: 0.9; }
+  button#submitBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
-  .result {
-    margin-top: 24px;
-    display: none;
-  }
+  .result { margin-top: 24px; display: none; }
 
   .status-line {
     display: flex;
@@ -161,15 +198,30 @@
     background: #22c55e;
     color: #052e16;
   }
+
+  .footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 12px;
+    color: #64748b;
+  }
 </style>
 </head>
 <body>
   <div class="card">
     <div class="header">
-      <span class="icon">🐞</span>
-      <h1>Bug Triage Agent</h1>
+      <div class="title-group">
+        <span class="icon">🐞</span>
+        <h1>Bug Triage Agent</h1>
+      </div>
+      <button id="themeToggle">🌙 Dark</button>
     </div>
     <p class="subtitle">Paste a bug report. The agent analyzes it and files a Jira ticket on its own.</p>
+
+    <select id="projectSelect">
+      <option value="SCRUM">Bug Triage</option>
+      <option value="QTCG">QA Test Cases Generator</option>
+    </select>
 
     <textarea id="bugReport" placeholder="Describe the bug..."></textarea>
     <button id="submitBtn">Analyze &amp; Triage</button>
@@ -188,14 +240,23 @@
         <a id="ticketLink" href="#" target="_blank">View in Jira →</a>
       </div>
     </div>
+
+    <div class="footer">Powered by Claude AI · Built by Racheal Joshua</div>
   </div>
 
   <script>
+    const themeToggle = document.getElementById('themeToggle');
+    themeToggle.addEventListener('click', () => {
+      document.body.classList.toggle('light');
+      const isLight = document.body.classList.contains('light');
+      themeToggle.textContent = isLight ? '☀️ Light' : '🌙 Dark';
+    });
+
+    const projectSelect = document.getElementById('projectSelect');
     const btn = document.getElementById('submitBtn');
     const textarea = document.getElementById('bugReport');
     const result = document.getElementById('result');
     const statusLine = document.getElementById('statusLine');
-    const statusText = document.getElementById('statusText');
     const explanation = document.getElementById('explanation');
     const ticketBox = document.getElementById('ticketBox');
     const ticketId = document.getElementById('ticketId');
@@ -216,7 +277,7 @@
         const res = await fetch('/triage', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ bugReport }),
+          body: JSON.stringify({ bugReport, projectKey: projectSelect.value }),
         });
         const data = await res.json();
 
