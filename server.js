@@ -84,14 +84,8 @@ async function createJiraTicket(input, projectKey) {
   };
 }
 
-async function executeTool(name, input, projectKey) {
-  if (name === 'create_jira_ticket') {
-    return await createJiraTicket(input, projectKey);
-  }
-}
-
-app.post('/triage', async (req, res) => {
-  const { bugReport, projectKey } = req.body;
+app.post('/analyze', async (req, res) => {
+  const { bugReport } = req.body;
 
   if (!bugReport || bugReport.trim().length === 0) {
     return res.status(400).json({ error: 'Bug report is required' });
@@ -113,29 +107,47 @@ For the ticket description, write exactly 3 short paragraphs separated by a blan
 line: first what's happening, second the likely root cause, third the recommended
 fix. Each paragraph should be 2-3 sentences, easy to read at a glance.
 
-Keep your spoken explanation (outside the ticket) to 3-4 short sentences, then take
-action using the tools available to you.`,
+Keep your spoken explanation (outside the ticket) to 3-4 short sentences, then propose
+a ticket using the tools available to you. Do not create the ticket yourself, only
+propose it for the user to review.`,
       tools,
       messages: [
-        { role: 'user', content: `Analyze this bug and take whatever action is appropriate:\n\n${bugReport}` }
+        { role: 'user', content: `Analyze this bug and propose a ticket:\n\n${bugReport}` }
       ],
     });
 
     let explanation = '';
-let ticketResult = null;
-let meta = null;
+    let proposal = null;
 
-for (const block of response.content) {
-  if (block.type === 'text') {
-    explanation = block.text;
-  }
-  if (block.type === 'tool_use') {
-    ticketResult = await executeTool(block.name, block.input, projectKey);
-    meta = { severity: block.input.severity, priority: block.input.priority };
-  }
-}
+    for (const block of response.content) {
+      if (block.type === 'text') {
+        explanation = block.text;
+      }
+      if (block.type === 'tool_use') {
+        proposal = block.input;
+      }
+    }
 
-   res.json({ explanation, ticket: ticketResult, meta });
+    res.json({ explanation, proposal });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post('/create-ticket', async (req, res) => {
+  const { proposal, projectKey } = req.body;
+
+  if (!proposal || !proposal.title) {
+    return res.status(400).json({ error: 'A ticket proposal is required' });
+  }
+
+  try {
+    const ticketResult = await createJiraTicket(proposal, projectKey);
+    if (!ticketResult.success) {
+      return res.status(502).json({ error: ticketResult.error, ticket: ticketResult });
+    }
+    res.json({ ticket: ticketResult });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
