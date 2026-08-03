@@ -122,18 +122,20 @@ action using the tools available to you.`,
     });
 
     let explanation = '';
-    let ticketResult = null;
+let ticketResult = null;
+let meta = null;
 
-    for (const block of response.content) {
-      if (block.type === 'text') {
-        explanation = block.text;
-      }
-      if (block.type === 'tool_use') {
-        ticketResult = await executeTool(block.name, block.input, projectKey);
-      }
-    }
+for (const block of response.content) {
+  if (block.type === 'text') {
+    explanation = block.text;
+  }
+  if (block.type === 'tool_use') {
+    ticketResult = await executeTool(block.name, block.input, projectKey);
+    meta = { severity: block.input.severity, priority: block.input.priority };
+  }
+}
 
-    res.json({ explanation, ticket: ticketResult });
+   res.json({ explanation, ticket: ticketResult, meta });
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
