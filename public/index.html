@@ -96,6 +96,7 @@
     grid-template-columns: 340px 320px minmax(0, 1fr);
     gap: 20px;
     padding: 24px 32px 40px;
+    overflow-x: hidden;
   }
 
   .panel {
@@ -197,7 +198,7 @@
     display: flex; gap: 10px; align-items: flex-start;
   }
 
-  .output-panel { min-height: 560px; display: flex; flex-direction: column; }
+  .output-panel { min-height: 560px; min-width: 0; display: flex; flex-direction: column; }
   .output-header { font-size: 14px; font-weight: 700; color: #f1f5f9; margin-bottom: 16px; }
 
   .empty-state {
@@ -258,10 +259,10 @@
   .btn-row { display: flex; gap: 10px; margin-top: 4px; }
 
   .history-row {
-    display: flex; align-items: center; justify-content: space-between;
-    padding: 12px 0; border-bottom: 1px solid #1f2937; font-size: 13px;
+    display: flex; align-items: flex-start; justify-content: space-between;
+    gap: 12px; padding: 12px 0; border-bottom: 1px solid #1f2937; font-size: 13px;
   }
-  .history-row a { color: #38bdf8; text-decoration: none; font-size: 12px; }
+  .history-row a { color: #38bdf8; text-decoration: none; font-size: 12px; flex-shrink: 0; white-space: nowrap; padding-top: 1px; }
 
   @media (max-width: 1100px) {
     .layout { grid-template-columns: 1fr; padding: 20px; }
@@ -295,8 +296,8 @@
         </select>
       </div>
       <input type="text" id="customProjectKey" placeholder="Your Jira project key, e.g. ABC" style="display:none; margin-top:8px;">
-      <div id="customProjectHint" style="display:none; font-size:11px; color:#64748b; margin-top:6px; line-height:1.5;">
-        Find this in your Jira board URL, right after <code style="background:#0b1120; padding:1px 5px; border-radius:4px;">/projects/</code>, e.g. <strong>yoursite.atlassian.net/jira/software/projects/<span style="color:#818cf8;">ABC</span>/boards/1</strong>
+      <div id="customProjectHint" style="display:none; font-size:11px; color:#64748b; margin:8px 0 4px; line-height:1.6; overflow-wrap:anywhere; word-break:break-word;">
+        Find this in your Jira board URL, right after <code style="background:#0b1120; padding:1px 5px; border-radius:4px;">/projects/</code>, e.g.<br><strong style="color:#818cf8;">yoursite.atlassian.net/.../projects/ABC/boards/1</strong>
       </div>
 
       <div class="section-label">Bug report</div>
@@ -503,7 +504,7 @@ just a minor visual annoyance.`,
       items.slice(0, 6).forEach(item => {
         const row = document.createElement('div');
         row.className = 'history-row';
-        row.innerHTML = `<div style="display:flex;align-items:center;gap:10px;"><span class="badge ${item.severity}">${item.severity}</span><span>${item.title}</span></div><a href="${item.url}" target="_blank">${item.id} →</a>`;
+        row.innerHTML = `<div style="display:flex;align-items:flex-start;gap:10px;min-width:0;flex:1;"><span class="badge ${item.severity}" style="flex-shrink:0;">${item.severity}</span><span style="min-width:0;word-break:break-word;">${item.title}</span></div><a href="${item.url}" target="_blank">${item.id} →</a>`;
         historyList.appendChild(row);
       });
     }
